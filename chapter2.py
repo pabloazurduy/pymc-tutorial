@@ -147,7 +147,7 @@ with pm.Model() as model_ch:
     observed_proportion = pm.Deterministic("observed_proportion", at.sum(val)/100.0)
     observations = pm.Binomial("obs", N, observed_proportion, observed=35)
     step = pm.NUTS()
-    burned_trace = pm.sample(10000, step=step, cores=1, chains=1, progressbar=True)
+    burned_trace = pm.sample(1000, step=step, cores=1, chains=1, progressbar=True)
 
 # alternative model
 with pm.Model() as model_alt:
@@ -155,7 +155,7 @@ with pm.Model() as model_alt:
     p_skewed = pm.Deterministic("p_skewed", 0.5*p + 0.25)
     yes_responses = pm.Binomial("number_cheaters", N, p_skewed, observed=35)
     step = pm.NUTS()
-    burned_trace = pm.sample(10000, step=step, cores=1, chains=1, progressbar=True)
+    burned_trace = pm.sample(1000, step=step, cores=1, chains=1, progressbar=True)
 # this model runs way faster than the first one, it might be the observed proportion formula (?) or just the amount of dist 
 # the plot works for both models 
 from matplotlib import pyplot as plt
@@ -166,6 +166,3 @@ plt.vlines([.05, .35], [0, 0], [5, 5], alpha=0.3)
 plt.xlim(0, 1)
 plt.legend()
 
-# ========================================== #
-# Example: Challenger Space Shuttle Disaster #
-# ========================================== #

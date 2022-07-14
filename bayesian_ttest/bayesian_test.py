@@ -32,7 +32,8 @@ for i in range(1,10):
         obs_B = pm.Bernoulli("obs_B", p_B, observed=observations_B)
 
         # To be explained in chapter 3.
-        step = pm.Metropolis()
+        # step = pm.Metropolis()
+        step = pm.NUTS()
         burned_trace = pm.sample(10000, step=step, cores=1, chains=1, progressbar=False)
     az.plot_trace(burned_trace, combined=True)
     delta_samples = burned_trace.posterior["delta"].values[0]
