@@ -103,7 +103,7 @@ det_display = DetCurveDisplay(fpr=fpr, fnr=fnr)
 fpr, tpr, _ = roc_curve(D, posterior_probability)
 roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr)
 
-prec, recall, _ = precision_recall_curve(D, posterior_probability)
+prec, recall, thresholds = precision_recall_curve(D, posterior_probability)
 pr_display = PrecisionRecallDisplay(precision=prec, recall=recall)
 
 import matplotlib.pyplot as plt
@@ -116,3 +116,14 @@ ax2.set_title(f'PR curve AUCPR={auc_pr:.4f}')
 ax3.set_title(f'Detection Error Tradeoff (DET) curves')
 plt.show()
 
+# this plot is from https://github.com/ageron/handson-ml2/blob/master/03_classification.ipynb
+def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):    
+    plt.plot(thresholds, precisions[:-1], "b--", label="Precision", linewidth=2)
+    plt.plot(thresholds, recalls[:-1], "g-", label="Recall", linewidth=2)
+    plt.xlabel("probability threshold")
+    plt.axis([1, 0, 0, 1.1])
+    plt.title('Precision Recall Threshold curves')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+plot_precision_recall_vs_threshold(prec, recall, thresholds)
