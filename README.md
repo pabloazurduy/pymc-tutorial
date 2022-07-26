@@ -7,8 +7,8 @@ this are some changes in the API from pymc3 to pymc4 that I've being using to po
 
 - `testval` parameter is replaced by `initval`
 - `theano.tensor` (`tt`) its replaced by  `aesara.tensor` (`at`)
-- `test_value` is (apparently) not longer working. No idea if there is a way to get a value without sampling first. 
-- to get values from `trace` from `trace = pm.sample(10000, **args)`  use `trace.posterior['var'].values[0]` - old way `trace['var'][15000:]` - 
+- `test_value` is (apparently) no longer working. No idea if there is a way to get a value without sampling first. 
+- To get values from `trace` from `trace = pm.sample(10000, **args)` use `trace.posterior['var'].values[0]` - old way `trace['var'][15000:]` - 
 - try not to use `pm.Metropolis()` [results are not very consistent] use instead `pm.NUTS()` is a different sampling algorithm, but seems to be more consistent than the other algorithm. 
 
 
@@ -39,21 +39,23 @@ import pymc as pm
 # ======================= #
 with pm.Model() as model:
     theta = pm.Exponential("poisson_param", 1.0, initval=0.5) # prior
-    data_generator = pm.Poisson("data_generator", theta) # likelihood function (the poisson will describe the data distribution given the parameter value) 
+    data_generator = pm.Poisson("data_generator", theta, observed=obs) # likelihood function (the poisson will describe the data distribution given the parameter value) 
     # we sometimes (usually) don't know the shape of the posterior 
     # but we can sample from it using mcmc 
+    data_generator_sim = pm.Poisson("data_generator", theta) # we usually have to duplicate the likelihood function so we can have a traced sampling from the posterior 
     trace = pm.sample(1000) # samples of the posterior using MCMC 
 
 ```
 
-Even when we set a prior distribution and that assumes some model of the reality, the posterior can look very different -it can be shaped over the weight of the "data" or evidence - and it will be converge too, maybe more slow, but it will be shaped too.  
+Even when we set a prior distribution and that assumes some model of the reality, the posterior can look very different -it can be shaped over the weight of the "data" or evidence - and it will be converge too, maybe more slow, but it will be shaped too. In `pymc` the way to extract the posterior from a "observed variable", for example `data_generator`, will be to duplicate that distribution but [not adding the][1] `observed` parameter, therefore we will have a second variable `data_generator_sim` that will read the same prior parameter `theta`, and independently simulate the posterior of `observed`. This posterior can be use to [make inference](#notes-about-doing-inference-with-samples)
 
 Actually, in bayesian inference the process of using new data to re-estimate the posterior is called [`bayesian update`](https://github.com/dccuchile/CC6104/blob/master/slides/3_1_ST-bayesian.pdf), and this process can be run indefinitely using the last estimated `posterior` as the new `prior`, and generate a `new posterior` base on it. 
 
 <p align="center"><img src="img/bayesian_updating.png" alt="drawing" width="400"/></p>
 
 
-### Notes about doing inference with samples (extracted from [Ch2-3](https://github.com/dccuchile/CC6104/blob/master/slides/3_2_ST-posterior.pdf)) 
+### Notes about doing inference with samples 
+*(extracted from [Ch2-3](https://github.com/dccuchile/CC6104/blob/master/slides/3_2_ST-posterior.pdf))*
 
 If we know the posterior shape, for example after using a conjugate priors, we can estimate easily the areas under the curve using the formula, Although, Given that usually we can't know for sure the shape of the posterior we have to make some hypothesis test over the **sampling** of the posterior, a few common tests are the followings: 
 
@@ -72,15 +74,15 @@ If we know the posterior shape, for example after using a conjugate priors, we c
 
     We calculate the `np.quantile` where `q=p` for the trace, and that's our $\theta_{ub}$. `qub ~ np.quantile(trace, q=p)`
 
-4. In the bayesian world the **credible intervals** are the equivalent of the *confidence intervals*  in the classical world. They have a very different interpretation thought:
+4. In the Bayesian world the **credible intervals** are the equivalent of the *confidence intervals* in the classical world. They have a very different interpretation thought:
 
-    -  A confidence interval is a region (that will vary depending on the sample). that after infinitely repeating the data sampling experiments will contain the true parameter  $(1-\alpha)$ percentage of the time. 
+    -  A confidence interval is a region (that will vary depending on the sample) that after infinitely repeating the data sampling experiments will contain the true parameter $(1-\alpha)$ percentage of the time. 
 
     - In contrast, a **credible interval** is a range of values that **we believe** our parameter can take with a certain probability according to both our prior beliefs and the evidence given by the data.
 
     The determination procedure for a **credible interval** varies given the posterior shape, if the shape is "symmetrical" using an **equally tailored interval** will be enough. 
 
-    An  **equally tailored interval**  is estimated using the procedure in (3). we basically get both bounds of the interval estimating the tails sizes $\alpha/2$. For example, if $90\% = 1-\alpha$ is our *confidence (credible?) level* ($\alpha = 10\%$, $\alpha/2 = 5\%$ ). therefore we estimate $\theta_{lb}$ = `np.quantile(trace, q=0.05)` and our  $\theta_{ub}$ = `np.quantile(trace, q=0.95)`. Therefore our **credible interval** $CRI = [\theta_{lb}, \theta_{ub}]$
+    An  **equally tailored interval**  is estimated using the procedure in (3). we basically get both bounds of the interval estimating the tails sizes $\alpha/2$. For example, if $90\% = 1-\alpha$ is our *confidence (credible?) level* ($\alpha = 10\%$, $\alpha/2 = 5\%$ ). therefore, we estimate $\theta_{lb}$ = `np.quantile(trace, q=0.05)` and our $\theta_{ub}$ = `np.quantile(trace, q=0.95)`. Therefore, our **credible interval** $CRI = [\theta_{lb}, \theta_{ub}]$
      
     Nevertheless, sometimes (and very often), our distribution is non-symmetrical or very skew, and is possible that a symmetrical **credible interval** might not even contain the most likely value of $\theta$ (for example when true $\theta$ is in a extreme). In this case we use the **Highest Posterior Density Interval (HPDI)**. The concept behind that interval is basically get *all the possible intervals* with area $1-\alpha$ and choose the one with the narrower interval ($\theta_{ub}-\theta_{lb}:argmin$). 
 
@@ -107,8 +109,12 @@ If we know the posterior shape, for example after using a conjugate priors, we c
 
 Usually we want to generate simulated data ($\widetilde{d}$) in order to validate our model, and additionally, to get predictions. We want to use our posterior information ($f(\theta|d)$) to do so.
 
-A simple approach would be to use a point estimator of $\theta \sim f(\theta|d)$, for example MAP ($\theta_{MAP}$), insert it on the `likelihood` function $f(d|\theta_{MAP})$, and finally, using that distribution to generate the new data $\widetilde{d}$. The problem with that procedure is that we will ignore the uncertainty in $\theta$ that we have learn from `posterior`. we would like to include that uncertainty in our simulation.  
+A simple approach would be to use a point estimator of $\theta \sim f(\theta|d)$, for example MAP ($\theta_{MAP}$), insert it on the `likelihood` function $f(d|\theta_{MAP})$, and finally, using that distribution to generate the new data $\widetilde{d}$. The problem with that procedure is that we will ignore the uncertainty in $\theta$ that we have learn from `posterior`. We would like to include that uncertainty in our simulation.  
 
 What we can do is to use many $\theta_{i}$ values , and use them to simulate data using the `likelihood` function $\widetilde{d_i} \leftarrow f(d|\theta_{i})$, then, we would **weight** those simulations $\widetilde{d_i}$ with the probability of getting those  $\theta_i$ from the `posterior`. We call this new distribution the **posterior predictive distribution**, mathematically will be something like $f(\widetilde{d}|d) =\int_{\theta_i} f(\widetilde{d}|\theta_i)f(\theta_i|d) \partial \theta_i$. We basically have an estimation on how likely we can obtain a value $\widetilde{d_i}$ given our posterior. 
 
 An alternative process to estimate the **posterior predictive distribution** is to use a `trace` from the `posterior` (a vector of $\theta_i$'s), and use them to get samples from the `likelihood` function $\widetilde{d_i} \leftarrow f(d|\theta_{i})$ and then simply average them, given that the $\theta_i$ values where already draw using the posterior. 
+
+
+[//]: # (References)
+[1]: <https://discourse.pymc.io/t/deterministic-with-observables-changes-the-dimensions-of-the-variables-why/10005/5?u=pabloazurduy>
