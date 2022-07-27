@@ -23,19 +23,21 @@ this are some changes in the API from `pymc3` to `pymc4` that I've being using t
 
 # Some Bayesian Inference concepts
 
-The main goal of the bayesian inference is to estimate a `posterior` $f(\theta|d)$ given that we have a `prior` distribution $f(\theta)$ (over the parameters) and `likelihood` distribution too $f(d|\theta)$ and a `evidence` or `average likelihood` $f(d)$
+The main goal of the bayesian inference is to estimate a `posterior` $f(\theta|d)$ given that we have a `prior` distribution $f(\theta)$ over the parameters $\theta$, a `likelihood` distribution $f(d|\theta)$ and an `evidence` or `average likelihood` $f(d)$ distribution:
 
 $$f(\theta|d) =\frac{f(d|\theta)*f(\theta)}{f(d)}$$
 
-Where $f(d) = \sum_{\theta}f(d|\theta)*f(\theta)$ which is a "normalization" value over the posterior "space". We use $f()$ to avoid the use of $IP()$ but, conceptually is just a probability (not exactly* but "almost"). 
+Where $f(d)$ can be calculated using total probabilities  $f(d)= \sum_{\theta}f(d | \theta)*f(\theta)$. Is worth notice than $1/f(d)$ it's like a "normalization" term over the posterior "space". 
 
-One difference from the bayesian inference to the "classical" statistical inference is that we are looking into the "distribution" of the parameter $f(\theta|d)$(`posterior`) and not assuming that there is a "real" value $\theta$ and we are looking into an estimator of that "real parameter" $\hat{\theta} \sim \theta$. Therefore our posterior will provide us with a distribution of the parameter, rather than just an estimator. 
+In the  Bayesian Inference world we use $f()$ notation to avoid the use of "probability" $\mathbb{P}()$ notation, this is because in the strictly sense they are not the same, but conceptually are pretty much the same (not exactly* but "almost"). 
+
+One difference from the bayesian inference to the "classical" statistical inference is that we are looking to find the "distribution" of the parameter $f(\theta|d)$(`posterior`) rather than finding an "estimator" $\hat{\theta} \sim \theta$ from  a "real" parameter value $\theta$ . Therefore our posterior will provide us with a **distribution** of the parameter, rather than just an **estimator**. 
 
 Usually in the bayesian inference problems we have a random process and we follow the next steps:
-1. we have some prior beliefs on the distributions that generate that process and some priors over the parameters. we call all of them $f(\theta)$ our `priors` (this priors can be nested)
+1. we have some prior beliefs on the distributions that generate that process and some priors over the parameters. we call all of them $f(\theta)$ our `priors` (this priors can be (and usually are) nested)
 2. given our "model" of the reality we can estimate a `likelihood` function over the data $f(d|\theta)$ this usually describe how likely is to get our data given that we have a prior from our priors $f(\theta)$
-3. We usually don't know the shape or form of the `posterior` distribution, except when we have [conjugate distributions](https://en.wikipedia.org/wiki/Conjugate_prior#Table_of_conjugate_distributions) with the `prior` and `likelihood`.If we  don't have an analytical solution we still can sample from it using `mcmc` #magic. 
-4. we don't care much about the "`evidence`" function mainly because is hard to estimate and there are some properties over `mcmc` that allow us to sample from a "proportionally similar" function rather than the original distribution too and it will [guarantee convergency too](https://github.com/dccuchile/CC6104#part-iii-bayesian-inference). 
+3. We usually don't know the shape or form of the `posterior` distribution, except when we have [conjugate distributions][7] pair, with the `prior` and `likelihood` conjugated. If we  don't have an analytical solution we still can sample from it using the `mcmc` #magic. 
+4. we don't care much about the "`evidence`" function, mainly because is hard to estimate (big integral) and there are some properties over `mcmc` that allow us to sample from a "proportionally similar" function rather than the original distribution and still [guarantee convergency](https://github.com/dccuchile/CC6104#part-iii-bayesian-inference). 
 
 
 
@@ -66,7 +68,7 @@ Actually, in bayesian inference the process of using new data to re-estimate the
 ### Notes about doing inference with samples 
 *(extracted from [Ch2-3](https://github.com/dccuchile/CC6104/blob/master/slides/3_2_ST-posterior.pdf))*
 
-***Important** before using any of this methods make sure you also read the [the implementation notes](#trace-notes) too*
+***Important:** before using any of this methods make sure you also read the [the implementation notes](#trace-notes) too*
 
  If we know the posterior shape, for example after using a conjugate priors, we can estimate easily the areas under the curve using the formula, Although, Given that usually we can't know for sure the shape of the posterior we have to make some hypothesis test over the **sampling** of the posterior. Some common inference sampling procedures are the followings: 
  
@@ -147,3 +149,4 @@ we usually ... [TODO]
 [4]: <https://nbviewer.org/github/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/blob/master/Chapter3_MCMC/Ch3_IntroMCMC_PyMC3.ipynb#Autocorrelation>
 [5]: <https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers#pymc3>
 [6]: <https://www.pymc.io/projects/examples/en/latest/samplers/DEMetropolisZ_tune_drop_fraction.html?highlight=autocorrelation#autocorrelation>
+[7]: <https://en.wikipedia.org/wiki/Conjugate_prior#Table_of_conjugate_distributions>
