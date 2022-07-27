@@ -14,6 +14,7 @@ with pm.Model() as model:
 
 # plot results 
 # az.plot_trace(idata, combined=True)
+# az.plot_posterior(idata, rope=(0,0.5))
 # az.summary(idata, round_to=2)
 
 with pm.Model() as model:

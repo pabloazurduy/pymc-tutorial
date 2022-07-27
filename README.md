@@ -1,15 +1,24 @@
 # Bayesian Methods for hackers - PYMC4 snippets  
-This is a collection of some snippets founded in the book [Probabilistic Programming and Bayesian Methods for Hackers](https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers) ported to `pymc4` (`pymc==4.1.2`). The last version of the book (available [online](https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers#pymc3)) was implemented on `pymc3`, but the library has suffered strong changes in the classes and implementations since then. I have a physical copy of the book and is impossible to follow. I use the `pymc3` notebooks available in the github repository. 
+This is a collection of some snippets founded in the book [Probabilistic Programming and Bayesian Methods for Hackers](https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers) ported to `pymc4` (`pymc==4.1.2`). The last version of the book (available [online][5] was implemented on `pymc3`, but the library has suffered strong changes in the classes and implementations since then. I have a physical copy of the book and is impossible to follow. I use the `pymc3` notebooks available in the [github repository][5]. 
 
 ## Notes in Changelog from pymc3 to pymc4
 
-this are some changes in the API from pymc3 to pymc4 that I've being using to port the code from the book:
+this are some changes in the API from `pymc3` to `pymc4` that I've being using to port the code from the book:
 
 - `testval` parameter is replaced by `initval`
 - `theano.tensor` (`tt`) its replaced by  `aesara.tensor` (`at`)
 - `test_value` is (apparently) no longer working. No idea if there is a way to get a value without sampling first. 
 - To get values from `trace` from `trace = pm.sample(10000, **args)` use `trace.posterior['var'].values[0]` - old way `trace['var'][15000:]` - 
-- try not to use `pm.Metropolis()` [results are not very consistent] use instead `pm.NUTS()` is a different sampling algorithm, but seems to be more consistent than the other algorithm. 
+- try not to use `pm.Metropolis()` (results are not very consistent?) use instead `pm.NUTS()` is a different sampling algorithm, but seems to be more consistent than the other algorithm. 
+- for ploting use `arviz` (`import arviz as az`), some of the most common plots and functions:
+    - `az.summary(trace)`: a summary table from all the variables, use the arg `var_names` to subset them. 
+    - `az.plot_trace(trace, combined=True)`: the main plot that shows the histograms of the parameters in the `trace`
+    - `az.plot_forest(trace, combined=True)`: similar to the `plot_trace` but in a compact way
+    - `az.plot_posterior(trace, rope=(lb,ub))`: plots only the posteriors from `var_names` and also added the option to plot the `HDI` with a `ROPE` interval probability 
+    - `az.plot_ppc`: TODO
+    - `az.plot_hdi`: TODO
+    - `az.plot_autocorr(trace)`: autocorrelation plots, useful to diagnose `mcmc` convergence
+
 
 
 # Some Bayesian Inference concepts
@@ -42,7 +51,7 @@ with pm.Model() as model:
     data_generator = pm.Poisson("data_generator", theta, observed=obs) # likelihood function (the poisson will describe the data distribution given the parameter value) 
     # we sometimes (usually) don't know the shape of the posterior 
     # but we can sample from it using mcmc 
-    data_generator_sim = pm.Poisson("data_generator", theta) # we usually have to duplicate the likelihood function so we can have a traced sampling from the posterior 
+    data_generator_sim = pm.Poisson("data_generator", theta) # we usually have to duplicate the likelihood function so we can have a traced sampling from the posterior. This is actually a "posterior predictive distribution (?)"
     trace = pm.sample(1000) # samples of the posterior using MCMC 
 
 ```
@@ -57,8 +66,10 @@ Actually, in bayesian inference the process of using new data to re-estimate the
 ### Notes about doing inference with samples 
 *(extracted from [Ch2-3](https://github.com/dccuchile/CC6104/blob/master/slides/3_2_ST-posterior.pdf))*
 
-If we know the posterior shape, for example after using a conjugate priors, we can estimate easily the areas under the curve using the formula, Although, Given that usually we can't know for sure the shape of the posterior we have to make some hypothesis test over the **sampling** of the posterior, a few common tests are the followings: 
+***Important** before using any of this methods make sure you also read the [the implementation notes](#trace-notes) too*
 
+ If we know the posterior shape, for example after using a conjugate priors, we can estimate easily the areas under the curve using the formula, Although, Given that usually we can't know for sure the shape of the posterior we have to make some hypothesis test over the **sampling** of the posterior. Some common inference sampling procedures are the followings: 
+ 
 1. What is the probability than $\theta \le \theta_{ub}$ ? $\mathbb{P}(\theta \le \theta_{ub})$. 
     
     We count the number of elements in the `trace` that are lower than $\theta_{ub}$ and divided by the elements in the `trace`. Therefore `p ~ len(trace<=ub)/len(trace)`
@@ -104,6 +115,14 @@ If we know the posterior shape, for example after using a conjugate priors, we c
 
     <p align="center"><img src="img/mean_mode_median.png" alt="drawing" width="400"/></p>
 
+### Implementation Notes (inference with samples) <span id="trace-notes"><span>
+ 1. **Burned Trace**: When we use a sampling trace to do inference, usually you should drop the `n-first` elements from the `trace` usually known as the `burned_traced` or [*"burn-in period"*][2] because, when we started the `mcmc` algorithm we don't converge to the posterior distribution after we reach some transient state. A good rule of thumbs will be to drop the first `1000` samples or so. In `pymc` the `pm.Sample()` method has the `tune:int=1000` parameter and the `discard_tuned_samples:bool=True` that defines the burn-in period, is by default set to `1000` and discarded. 
+  
+ 2. **Don't mix traces**: The `mcmc` sampling procedure is a sampling over a `n-dimensional` posterior, each one of those `n-dimensions` (associated with `n-parameters`) are not [independent between each other][3], meaning that given a value for $\theta_i$ there is also a more likely $\theta_j$, that means that you should use a trace complete and don't mix multiples sampling results. 
+
+ 3. **Use `pm.find_MAP()` as start**. use `pm.find_MAP` as a warm start to reduce convergence times. You can also add a different solver if needed, but the default one has worked fine for me. Also adding the `initval` helps a lot the convergence of the algorithm. 
+
+ 4. **Diagnose convergence using autocorrelation**. There is a way to understand if mcmc is converging using [autocorrelation][4]. The basic concept behind is that, when converging the autocorrelation usually drops. you can use the [autocorrelation plot][6] to diagnose. 
 
 ### Generating "Predictions"
 
@@ -115,6 +134,16 @@ What we can do is to use many $\theta_{i}$ values , and use them to simulate dat
 
 An alternative process to estimate the **posterior predictive distribution** is to use a `trace` from the `posterior` (a vector of $\theta_i$'s), and use them to get samples from the `likelihood` function $\widetilde{d_i} \leftarrow f(d|\theta_{i})$ and then simply average them, given that the $\theta_i$ values where already draw using the posterior. 
 
+### How to do this in `pymc` ?
+we usually ... [TODO]
+
+
+
 
 [//]: # (References)
 [1]: <https://discourse.pymc.io/t/deterministic-with-observables-changes-the-dimensions-of-the-variables-why/10005/5?u=pabloazurduy>
+[2]: <https://nbviewer.org/github/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/blob/master/Chapter3_MCMC/Ch3_IntroMCMC_PyMC3.ipynb#Example:-Unsupervised-Clustering-using-a-Mixture-Model:~:text=before%20converge%20the-,burn%2Din%20period,-.> 
+[3]: <https://nbviewer.org/github/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/blob/master/Chapter3_MCMC/Ch3_IntroMCMC_PyMC3.ipynb#Important:-Don't-mix-posterior-samples>
+[4]: <https://nbviewer.org/github/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/blob/master/Chapter3_MCMC/Ch3_IntroMCMC_PyMC3.ipynb#Autocorrelation>
+[5]: <https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers#pymc3>
+[6]: <https://www.pymc.io/projects/examples/en/latest/samplers/DEMetropolisZ_tune_drop_fraction.html?highlight=autocorrelation#autocorrelation>
