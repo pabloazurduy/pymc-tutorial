@@ -15,7 +15,7 @@ this are some changes in the API from `pymc3` to `pymc4` that I've being using t
     - `az.plot_trace(trace, combined=True)`: the main plot that shows the histograms of the parameters in the `trace`
     - `az.plot_forest(trace, combined=True)`: similar to the `plot_trace` but in a compact way
     - `az.plot_posterior(trace, rope=(lb,ub))`: plots only the posteriors from `var_names` and also added the option to plot the `HDI` with a `ROPE` interval probability 
-    - `az.plot_ppc(posterior_samples)`: plot posterior predictive checks, use `pm.sample_posterior_predictive()` function to get the samples 
+    - [`az.plot_ppc(posterior_samples)`][12]: plot posterior predictive checks, use `pm.sample_posterior_predictive()` function to get the samples 
     - `az.plot_hdi`: TODO
     - `az.plot_autocorr(trace)`: autocorrelation plots, useful to diagnose `mcmc` convergence
 
@@ -155,3 +155,4 @@ There is a second method that is using the `pm.sample_posterior_predictive(trace
 [9]: <https://www.youtube.com/watch?v=kZPXbZT5stI&t=828s>
 [10]: <https://docs.pymc.io/en/v3/pymc-examples/examples/diagnostics_and_criticism/posterior_predictive.html>
 [11]:<https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.sample_posterior_predictive.html#pymc.sample_posterior_predictive>
+[12]:<https://arviz-devs.github.io/arviz/api/generated/arviz.plot_ppc.html>
