@@ -15,7 +15,7 @@ this are some changes in the API from `pymc3` to `pymc4` that I've being using t
     - `az.plot_trace(trace, combined=True)`: the main plot that shows the histograms of the parameters in the `trace`
     - `az.plot_forest(trace, combined=True)`: similar to the `plot_trace` but in a compact way
     - `az.plot_posterior(trace, rope=(lb,ub))`: plots only the posteriors from `var_names` and also added the option to plot the `HDI` with a `ROPE` interval probability 
-    - `az.plot_ppc`: TODO
+    - `az.plot_ppc(posterior_samples)`: plot posterior predictive checks, use `pm.sample_posterior_predictive()` function to get the samples 
     - `az.plot_hdi`: TODO
     - `az.plot_autocorr(trace)`: autocorrelation plots, useful to diagnose `mcmc` convergence
 
@@ -23,21 +23,24 @@ this are some changes in the API from `pymc3` to `pymc4` that I've being using t
 
 # Some Bayesian Inference concepts
 
+*These notes are my own summary from the course of [CC6104 Statistical Thinking][8] which might be a little dense to read as an introduction I highly encourage to watch the videos from that course (**in Spanish**). Also, a more gentle introduction to bayesian inference I recommend this [presentation][9] from Jacob Schreiber* 
+
 The main goal of the bayesian inference is to estimate a `posterior` $f(\theta|d)$ given that we have a `prior` distribution $f(\theta)$ over the parameters $\theta$, a `likelihood` distribution $f(d|\theta)$ and an `evidence` or `average likelihood` $f(d)$ distribution:
 
 $$f(\theta|d) =\frac{f(d|\theta)*f(\theta)}{f(d)}$$
 
-Where $f(d)$ can be calculated using total probabilities  $f(d)= \sum_{\theta}f(d | \theta)*f(\theta)$. Is worth notice than $1/f(d)$ it's like a "normalization" term over the posterior "space". 
+Where $f(d)$ can be calculated using total probabilities  $f(d)= \sum_{\theta}f(d | \theta)*f(\theta)$. This `average likelihood` in the context of the upper formula ( $1/f(d)$ ) it's a "normalization" over the posterior "space". 
 
-In the  Bayesian Inference world we use $f()$ notation to avoid the use of "probability" $\mathbb{P}()$ notation, this is because in the strictly sense they are not the same, but conceptually are pretty much the same (not exactly* but "almost"). 
+In the  Bayesian Inference world we use $f()$ notation to avoid the use of "probability" $\mathbb{P}()$ notation, this is because in the strictly sense they are not the same, but conceptually are very similar (not exactly* but "almost"). 
 
-One difference from the bayesian inference to the "classical" statistical inference is that we are looking to find the "distribution" of the parameter $f(\theta|d)$(`posterior`) rather than finding an "estimator" $\hat{\theta} \sim \theta$ from  a "real" parameter value $\theta$ . Therefore our posterior will provide us with a **distribution** of the parameter, rather than just an **estimator**. 
+One difference from the bayesian inference to the "classical" statistical inference is that we are looking to find the "distribution" of the parameter $f(\theta|d)$(`posterior`) rather than finding an "estimator" $\hat{\theta} \sim \theta$ from  a "real parameter value $\theta$ ". Therefore our posterior will provide us with a **distribution** of the parameter, rather than just an **estimator**. 
 
-Usually in the bayesian inference problems we have a random process and we follow the next steps:
-1. we have some prior beliefs on the distributions that generate that process and some priors over the parameters. we call all of them $f(\theta)$ our `priors` (this priors can be (and usually are) nested)
-2. given our "model" of the reality we can estimate a `likelihood` function over the data $f(d|\theta)$ this usually describe how likely is to get our data given that we have a prior from our priors $f(\theta)$
+Usually in the bayesian inference problems we follow the next steps. Assuming that we have a random process to model:
+
+1. We have some prior beliefs on the distributions that generate that process and some priors over the parameters. we call all of them $f(\theta)$ our `priors` (this priors can be (and usually are) nested)
+2. Given our "model" of the reality we can estimate a `likelihood` function over the data $f(d|\theta)$ this usually describe how likely is to get our data given that we have a prior from our priors $f(\theta)$
 3. We usually don't know the shape or form of the `posterior` distribution, except when we have [conjugate distributions][7] pair, with the `prior` and `likelihood` conjugated. If we  don't have an analytical solution we still can sample from it using the `mcmc` #magic. 
-4. we don't care much about the "`evidence`" function, mainly because is hard to estimate (big integral) and there are some properties over `mcmc` that allow us to sample from a "proportionally similar" function rather than the original distribution and still [guarantee convergency](https://github.com/dccuchile/CC6104#part-iii-bayesian-inference). 
+4. We don't care much about the "`evidence`" function, mainly because is hard to estimate (big integral) and there are some properties over `mcmc` that allow us to sample from a "proportionally similar" function rather than the original distribution and still [guarantee convergency](https://github.com/dccuchile/CC6104#part-iii-bayesian-inference). 
 
 
 
@@ -45,30 +48,28 @@ We can identify this components in a simple implementation with `pymc`
 
 ```python
 import pymc as pm
-# ======================= #
-# Simple model declaration 
-# ======================= #
+
 with pm.Model() as model:
     theta = pm.Exponential("poisson_param", 1.0, initval=0.5) # prior
-    data_generator = pm.Poisson("data_generator", theta, observed=obs) # likelihood function (the poisson will describe the data distribution given the parameter value) 
+    obs = pm.Poisson("obs", theta, observed=obs) # likelihood function (the poisson will describe the data distribution given the parameter value) 
     # we sometimes (usually) don't know the shape of the posterior 
     # but we can sample from it using mcmc 
-    data_generator_sim = pm.Poisson("data_generator", theta) # we usually have to duplicate the likelihood function so we can have a traced sampling from the posterior. This is actually a "posterior predictive distribution (?)"
+    obs_sim = pm.Poisson("obs_sim", theta) # we usually have to duplicate the likelihood function so we can have a traced sampling from the posterior. This is actually a "posterior predictive distribution (?)"
     trace = pm.sample(1000) # samples of the posterior using MCMC 
 
 ```
 
-Even when we set a prior distribution and that assumes some model of the reality, the posterior can look very different -it can be shaped over the weight of the "data" or evidence - and it will be converge too, maybe more slow, but it will be shaped too. In `pymc` the way to extract the posterior from a "observed variable", for example `data_generator`, will be to duplicate that distribution but [not adding the][1] `observed` parameter, therefore we will have a second variable `data_generator_sim` that will read the same prior parameter `theta`, and independently simulate the posterior of `observed`. This posterior can be use to [make inference](#notes-about-doing-inference-with-samples)
+Even when we set a prior distribution and that assumes some model of the reality, the posterior can look very different -it can be shaped over the weight of the "data" or evidence - and it will be converge too, maybe more slow, but it will be shaped too. 
 
 Actually, in bayesian inference the process of using new data to re-estimate the posterior is called [`bayesian update`](https://github.com/dccuchile/CC6104/blob/master/slides/3_1_ST-bayesian.pdf), and this process can be run indefinitely using the last estimated `posterior` as the new `prior`, and generate a `new posterior` base on it. 
 
 <p align="center"><img src="img/bayesian_updating.png" alt="drawing" width="400"/></p>
 
-
+Once we have "shaped" our priors, and therefore "deduced our posterior" we can do inference. Usually we don't have the actual posterior "formula" but we have a process on how to "sample" from that posterior. The following item is about how to do that
 ### Notes about doing inference with samples 
 *(extracted from [Ch2-3](https://github.com/dccuchile/CC6104/blob/master/slides/3_2_ST-posterior.pdf))*
 
-***Important:** before using any of this methods make sure you also read the [the implementation notes](#trace-notes) too*
+***Important:** before implementing any of this methods make sure you also read the [the implementation notes](#trace-notes) too*
 
  If we know the posterior shape, for example after using a conjugate priors, we can estimate easily the areas under the curve using the formula, Although, Given that usually we can't know for sure the shape of the posterior we have to make some hypothesis test over the **sampling** of the posterior. Some common inference sampling procedures are the followings: 
  
@@ -117,15 +118,6 @@ Actually, in bayesian inference the process of using new data to re-estimate the
 
     <p align="center"><img src="img/mean_mode_median.png" alt="drawing" width="400"/></p>
 
-### Implementation Notes (inference with samples) <span id="trace-notes"><span>
- 1. **Burned Trace**: When we use a sampling trace to do inference, usually you should drop the `n-first` elements from the `trace` usually known as the `burned_traced` or [*"burn-in period"*][2] because, when we started the `mcmc` algorithm we don't converge to the posterior distribution after we reach some transient state. A good rule of thumbs will be to drop the first `1000` samples or so. In `pymc` the `pm.Sample()` method has the `tune:int=1000` parameter and the `discard_tuned_samples:bool=True` that defines the burn-in period, is by default set to `1000` and discarded. 
-  
- 2. **Don't mix traces**: The `mcmc` sampling procedure is a sampling over a `n-dimensional` posterior, each one of those `n-dimensions` (associated with `n-parameters`) are not [independent between each other][3], meaning that given a value for $\theta_i$ there is also a more likely $\theta_j$, that means that you should use a trace complete and don't mix multiples sampling results. 
-
- 3. **Use `pm.find_MAP()` as start**. use `pm.find_MAP` as a warm start to reduce convergence times. You can also add a different solver if needed, but the default one has worked fine for me. Also adding the `initval` helps a lot the convergence of the algorithm. 
-
- 4. **Diagnose convergence using autocorrelation**. There is a way to understand if mcmc is converging using [autocorrelation][4]. The basic concept behind is that, when converging the autocorrelation usually drops. you can use the [autocorrelation plot][6] to diagnose. 
-
 ### Generating "Predictions"
 
 Usually we want to generate simulated data ($\widetilde{d}$) in order to validate our model, and additionally, to get predictions. We want to use our posterior information ($f(\theta|d)$) to do so.
@@ -137,10 +129,19 @@ What we can do is to use many $\theta_{i}$ values , and use them to simulate dat
 An alternative process to estimate the **posterior predictive distribution** is to use a `trace` from the `posterior` (a vector of $\theta_i$'s), and use them to get samples from the `likelihood` function $\widetilde{d_i} \leftarrow f(d|\theta_{i})$ and then simply average them, given that the $\theta_i$ values where already draw using the posterior. 
 
 ### How to do this in `pymc` ?
-we usually ... [TODO]
 
+There are two ways to extract a **posterior sampling distribution** one of them is implemented in the snippet above, that consist in duplicating the `likelihood` function but without adding the `observed` parameter, therefore we will have a `trace.posterior['obs_sim']` that will contain simulations of data from the posterior distribution $\widetilde{d_i} \leftarrow f(d|\theta_{i})$. This data samplings conform a **PSD**. 
 
+There is a second method that is using the `pm.sample_posterior_predictive(trace)` [function][11] explained [here][10] which apparently is more efficient than duplicating the `likelihood` variables, but is harder to interpret given than it generates `n_obs` traces (?)
 
+### Implementation Notes (inference with samples) <span id="trace-notes"><span>
+ 1. **Burned Trace**: When we use a sampling trace to do inference, usually you should drop the `n-first` elements from the `trace` usually known as the `burned_traced` or [*"burn-in period"*][2] because, when we started the `mcmc` algorithm we don't converge to the posterior distribution after we reach some transient state. A good rule of thumbs will be to drop the first `1000` samples or so. In `pymc` the `pm.Sample()` method has the `tune:int=1000` parameter and the `discard_tuned_samples:bool=True` that defines the burn-in period, is by default set to `1000` and discarded. 
+  
+ 2. **Don't mix traces**: The `mcmc` sampling procedure is a sampling over a `n-dimensional` posterior, each one of those `n-dimensions` (associated with `n-parameters`) are not [independent between each other][3], meaning that given a value for $\theta_i$ there is also a more likely $\theta_j$, that means that you should use a trace complete and don't mix multiples sampling results. 
+
+ 3. **Use `pm.find_MAP()` as start**. use `pm.find_MAP` as a warm start to reduce convergence times. You can also add a different solver if needed, but the default one has worked fine for me. Also adding the `initval` helps a lot the convergence of the algorithm. 
+
+ 4. **Diagnose convergence using autocorrelation**. There is a way to understand if mcmc is converging using [autocorrelation][4]. The basic concept behind is that, when converging the autocorrelation usually drops. you can use the [autocorrelation plot][6] to diagnose. 
 
 [//]: # (References)
 [1]: <https://discourse.pymc.io/t/deterministic-with-observables-changes-the-dimensions-of-the-variables-why/10005/5?u=pabloazurduy>
@@ -150,3 +151,7 @@ we usually ... [TODO]
 [5]: <https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers#pymc3>
 [6]: <https://www.pymc.io/projects/examples/en/latest/samplers/DEMetropolisZ_tune_drop_fraction.html?highlight=autocorrelation#autocorrelation>
 [7]: <https://en.wikipedia.org/wiki/Conjugate_prior#Table_of_conjugate_distributions>
+[8]: <https://github.com/dccuchile/CC6104#part-iii-bayesian-inference>
+[9]: <https://www.youtube.com/watch?v=kZPXbZT5stI&t=828s>
+[10]: <https://docs.pymc.io/en/v3/pymc-examples/examples/diagnostics_and_criticism/posterior_predictive.html>
+[11]:<https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.sample_posterior_predictive.html#pymc.sample_posterior_predictive>
