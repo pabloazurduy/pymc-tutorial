@@ -120,9 +120,9 @@ Once we have "shaped" our priors, and therefore "deduced our posterior" we can d
 
 ### Generating "Predictions"
 
-Usually we want to generate simulated data ($\widetilde{d}$) in order to validate our model, and additionally, to get predictions. We want to use our posterior information ($f(\theta|d)$) to do so.
+Usually we want to generate simulated data ( $\widetilde{d}$ ) in order to validate our model, and additionally, to get predictions. We want to use our posterior information ( $f(\theta|d)$ ) to do so.
 
-A simple approach would be to use a point estimator of $\theta \sim f(\theta|d)$, for example MAP ($\theta_{MAP}$), insert it on the `likelihood` function $f(d|\theta_{MAP})$, and finally, using that distribution to generate the new data $\widetilde{d}$. The problem with that procedure is that we will ignore the uncertainty in $\theta$ that we have learn from `posterior`. We would like to include that uncertainty in our simulation.  
+A simple approach would be to use a point estimator of $\theta \sim f(\theta|d)$, for example MAP ( $\theta_{MAP}$ ), insert it on the `likelihood` function $f(d|\theta_{MAP})$, and finally, using that distribution to generate the new data $\widetilde{d}$. The problem with that procedure is that we will ignore the uncertainty in $\theta$ that we have learn from `posterior`. We would like to include that uncertainty in our simulation.  
 
 What we can do is to use many $\theta_{i}$ values , and use them to simulate data using the `likelihood` function $\widetilde{d_i} \leftarrow f(d|\theta_{i})$, then, we would **weight** those simulations $\widetilde{d_i}$ with the probability of getting those  $\theta_i$ from the `posterior`. We call this new distribution the **posterior predictive distribution**, mathematically will be something like $f(\widetilde{d}|d) =\int_{\theta_i} f(\widetilde{d}|\theta_i)f(\theta_i|d) \partial \theta_i$. We basically have an estimation on how likely we can obtain a value $\widetilde{d_i}$ given our posterior. 
 
