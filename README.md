@@ -143,6 +143,15 @@ There is a second method that is using the `pm.sample_posterior_predictive(trace
 
  4. **Diagnose convergence using autocorrelation**. There is a way to understand if mcmc is converging using [autocorrelation][4]. The basic concept behind is that, when converging the autocorrelation usually drops. you can use the [autocorrelation plot][6] to diagnose. 
 
+
+
+### The law of large numbers (the convergence problem)
+
+The law of large numbers establish: 
+
+> The average of a sequence of random variables from the same distribution converges to the expected value of that distribution.
+
+
 [//]: # (References)
 [1]: <https://discourse.pymc.io/t/deterministic-with-observables-changes-the-dimensions-of-the-variables-why/10005/5?u=pabloazurduy>
 [2]: <https://nbviewer.org/github/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/blob/master/Chapter3_MCMC/Ch3_IntroMCMC_PyMC3.ipynb#Example:-Unsupervised-Clustering-using-a-Mixture-Model:~:text=before%20converge%20the-,burn%2Din%20period,-.> 
