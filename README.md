@@ -143,14 +143,23 @@ There is a second method that is using the `pm.sample_posterior_predictive(trace
 
  4. **Diagnose convergence using autocorrelation**. There is a way to understand if mcmc is converging using [autocorrelation][4]. The basic concept behind is that, when converging the autocorrelation usually drops. you can use the [autocorrelation plot][6] to diagnose. 
 
+### The law of large numbers (The problem with the high variances)
 
-
-### The law of large numbers (the convergence problem)
-
-The law of large numbers establish: 
+The law of large numbers establishes: 
 
 > The average of a sequence of random variables from the same distribution converges to the expected value of that distribution.
 
+how quick we converge to the expected value of a distribution $\mathbb{E}(Z_i)$. The rate of convergence of $\mathbb{E}(Z_i)$ given a sample of size $N$ will be given by the **Standard Error**: 
+
+$$SE = \frac{ \sqrt{ \; Var(Z) \; } }{\sqrt{N} }$$
+
+where the variance can be estimated using: 
+
+$$\frac{1}{N}\sum_{i=1}^N \;(Z_i - \mu)^2 = Var( Z )$$
+
+where $\mu$ is the estimator for $\mathbb{E}(Z_i)$, therefore, having a sample of $N$ draws, we might know how far are we (on average) from the true expected value. 
+
+This equation ( $SE$ ) "Moivre’s equation" is also known as the ["most dangerous equation"][13]. The main take is that we **shouldn't make inference (or point estimations) when we are dealing with small datasets**. This is not only a problem when our **sample** is small (drawn from a big population), but also when the **population** is small. Imagine a small population that is drawn from a distribution with expected value is $\mu$ the "small-population mean" might be very far from $\mu$, take for example a restaurant ranking with 3 reviews, the "true" rating of the restaurant might be far from the "average" of the reviews. 
 
 [//]: # (References)
 [1]: <https://discourse.pymc.io/t/deterministic-with-observables-changes-the-dimensions-of-the-variables-why/10005/5?u=pabloazurduy>
@@ -165,3 +174,4 @@ The law of large numbers establish:
 [10]: <https://docs.pymc.io/en/v3/pymc-examples/examples/diagnostics_and_criticism/posterior_predictive.html>
 [11]:<https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.sample_posterior_predictive.html#pymc.sample_posterior_predictive>
 [12]:<https://arviz-devs.github.io/arviz/api/generated/arviz.plot_ppc.html>
+[13]:<https://matheusfacure.github.io/python-causality-handbook/03-Stats-Review-The-Most-Dangerous-Equation.html>
