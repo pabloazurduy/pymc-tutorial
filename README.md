@@ -1,5 +1,5 @@
 # Bayesian Methods for hackers - PYMC4 snippets  
-This is a collection of some snippets founded in the book [Probabilistic Programming and Bayesian Methods for Hackers](https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers) ported to `pymc4` (`pymc==4.1.2`). The last version of the book (available [online][5] was implemented on `pymc3`, but the library has suffered strong changes in the classes and implementations since then. I have a physical copy of the book and is impossible to follow. I use the `pymc3` notebooks available in the [github repository][5]. 
+This is a collection of some snippets founded in the book [Probabilistic Programming and Bayesian Methods for Hackers][14] ported to `pymc4` (`pymc==4.1.2`). The last version of the book (available [online][5] was implemented on `pymc3`, but the library has suffered strong changes in the classes and implementations since then. I have a physical copy of the book and is impossible to follow. I use the `pymc3` notebooks available in the [github repository][5]. 
 
 ## Notes in Changelog from pymc3 to pymc4
 
@@ -175,3 +175,4 @@ This equation ( $SE$ ) "Moivre’s equation" is also known as the ["most dangero
 [11]:<https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.sample_posterior_predictive.html#pymc.sample_posterior_predictive>
 [12]:<https://arviz-devs.github.io/arviz/api/generated/arviz.plot_ppc.html>
 [13]:<https://matheusfacure.github.io/python-causality-handbook/03-Stats-Review-The-Most-Dangerous-Equation.html>
+[14]:<https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers>
