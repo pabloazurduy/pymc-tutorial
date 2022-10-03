@@ -15,7 +15,11 @@ $$
 
 ### in the real world 
 
->TODO
+In Bayesian Inference we assume that every parameter is a random variable with a prior and a posterior, therefore there is nothing like a "true value" just a few "realizations". Given that we will be focused in estimating the `Expected Loss` rather than a Loss estimation based in a point estimate (or just one sample from the posterior).
+
+
+
+
 
 [//]: # (References)
 [1]: <https://nbviewer.org/github/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/blob/master/Chapter5_LossFunctions/Ch5_LossFunctions_PyMC3.ipynb#Loss-Functions>
